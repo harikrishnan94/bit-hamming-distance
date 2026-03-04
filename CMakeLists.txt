@@ -37,11 +37,27 @@ add_library(hamming_distance_lib
     src/hamming_distance.cpp
 )
 
+add_library(hamming_distance_lib_native
+    src/hamming_distance.cpp
+)
+
 target_include_directories(hamming_distance_lib
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${simde_SOURCE_DIR}
 )
+
+target_include_directories(hamming_distance_lib_native
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${simde_SOURCE_DIR}
+)
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(hamming_distance_lib_native PRIVATE -march=native)
+elseif(MSVC)
+    target_compile_options(hamming_distance_lib_native PRIVATE /arch:AVX2)
+endif()
 
 function(filter_out_debug_flags out_var)
     set(filtered_flags)
@@ -132,9 +148,19 @@ add_executable(benchmark_bit_hamming_distance
     benchmarks/bench_hamming_distance.cpp
 )
 
+add_executable(benchmark_bit_hamming_distance_native
+    benchmarks/bench_hamming_distance.cpp
+)
+
 target_link_libraries(benchmark_bit_hamming_distance
     PRIVATE
         hamming_distance_lib
+        benchmark::benchmark
+)
+
+target_link_libraries(benchmark_bit_hamming_distance_native
+    PRIVATE
+        hamming_distance_lib_native
         benchmark::benchmark
 )
 
@@ -142,6 +168,14 @@ add_executable(simple_bench_bit_hamming_distance
     benchmarks/simple_bench_hamming_distance.cpp
 )
 
+add_executable(simple_bench_bit_hamming_distance_native
+    benchmarks/simple_bench_hamming_distance.cpp
+)
+
 target_link_libraries(simple_bench_bit_hamming_distance
     PRIVATE hamming_distance_lib
+)
+
+target_link_libraries(simple_bench_bit_hamming_distance_native
+    PRIVATE hamming_distance_lib_native
 )
