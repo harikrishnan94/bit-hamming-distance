@@ -125,3 +125,11 @@ target_link_libraries(benchmark_bit_hamming_distance
         hamming_distance_lib
         benchmark::benchmark
 )
+
+add_executable(simple_bench_bit_hamming_distance
+    benchmarks/simple_bench_hamming_distance.cpp
+)
+
+target_link_libraries(simple_bench_bit_hamming_distance
+    PRIVATE hamming_distance_lib
+)
