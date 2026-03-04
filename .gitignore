@@ -1,0 +1,23 @@
+# Build directories
+/build/
+/cmake-build-*/
+
+# CMake generated files
+/CMakeCache.txt
+/CMakeFiles/
+/cmake_install.cmake
+/compile_commands.json
+/Makefile
+
+# Benchmark dependencies fetched by CMake
+/_deps/
+
+# Tooling / IDE
+/.cache/
+/.clangd/
+/.idea/
+/.vscode/
+
+# macOS / editor noise
+.DS_Store
+*~
