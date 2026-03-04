@@ -20,7 +20,18 @@ FetchContent_Declare(
     GIT_TAG v1.9.1
 )
 
+FetchContent_Declare(
+    simde
+    GIT_REPOSITORY https://github.com/simd-everywhere/simde.git
+    GIT_TAG v0.8.2
+)
+
 FetchContent_MakeAvailable(benchmark)
+
+FetchContent_GetProperties(simde)
+if(NOT simde_POPULATED)
+    FetchContent_Populate(simde)
+endif()
 
 add_library(hamming_distance_lib
     src/hamming_distance.cpp
@@ -29,6 +40,7 @@ add_library(hamming_distance_lib
 target_include_directories(hamming_distance_lib
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${simde_SOURCE_DIR}
 )
 
 function(filter_out_debug_flags out_var)
