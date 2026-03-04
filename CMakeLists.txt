@@ -31,6 +31,91 @@ target_include_directories(hamming_distance_lib
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+function(filter_out_debug_flags out_var)
+    set(filtered_flags)
+    foreach(flag IN LISTS ARGN)
+        if(flag MATCHES "^SHELL:")
+            string(REGEX REPLACE "^SHELL:" "" shell_flag_group "${flag}")
+            separate_arguments(shell_flags UNIX_COMMAND "${shell_flag_group}")
+            filter_out_debug_flags(filtered_shell_flags ${shell_flags})
+            list(APPEND filtered_flags ${filtered_shell_flags})
+            continue()
+        endif()
+
+        if(flag MATCHES " " AND NOT flag MATCHES "^\\$<")
+            separate_arguments(split_flags UNIX_COMMAND "${flag}")
+            filter_out_debug_flags(filtered_split_flags ${split_flags})
+            list(APPEND filtered_flags ${filtered_split_flags})
+            continue()
+        endif()
+
+        if(flag MATCHES "^-g.*$")
+            continue()
+        endif()
+        if(flag MATCHES "^-f(debug|standalone-debug|no-standalone-debug|emit-class-debug-always|eliminate-unused-debug-types|no-eliminate-unused-debug-types).*$")
+            continue()
+        endif()
+        if(flag MATCHES "^/Z(i|I|7)$")
+            continue()
+        endif()
+        if(flag MATCHES "^/DEBUG(:.*)?$")
+            continue()
+        endif()
+        if(flag MATCHES "^\\$<.*:(-g[^>]*|-f(debug|standalone-debug|no-standalone-debug|emit-class-debug-always|eliminate-unused-debug-types|no-eliminate-unused-debug-types)[^>]*|/Z(i|I|7)|/DEBUG(:[^>]*)?)>$")
+            continue()
+        endif()
+        list(APPEND filtered_flags "${flag}")
+    endforeach()
+    set(${out_var} "${filtered_flags}" PARENT_SCOPE)
+endfunction()
+
+set(HAMMING_DISTANCE_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/hamming_distance.cpp)
+set(HAMMING_DISTANCE_ASM ${CMAKE_CURRENT_BINARY_DIR}/hamming_distance.s)
+
+set(HAMMING_DISTANCE_COMPILER_FLAGS ${CMAKE_CXX_FLAGS})
+if(CMAKE_BUILD_TYPE)
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" HAMMING_DISTANCE_BUILD_TYPE)
+    list(APPEND HAMMING_DISTANCE_COMPILER_FLAGS ${CMAKE_CXX_FLAGS_${HAMMING_DISTANCE_BUILD_TYPE}})
+endif()
+separate_arguments(HAMMING_DISTANCE_COMPILER_FLAGS)
+filter_out_debug_flags(HAMMING_DISTANCE_COMPILER_FLAGS ${HAMMING_DISTANCE_COMPILER_FLAGS})
+
+get_target_property(HAMMING_DISTANCE_DEFINITIONS hamming_distance_lib COMPILE_DEFINITIONS)
+if(HAMMING_DISTANCE_DEFINITIONS)
+    foreach(definition IN LISTS HAMMING_DISTANCE_DEFINITIONS)
+        list(APPEND HAMMING_DISTANCE_TARGET_FLAGS -D${definition})
+    endforeach()
+endif()
+
+get_target_property(HAMMING_DISTANCE_OPTIONS hamming_distance_lib COMPILE_OPTIONS)
+if(HAMMING_DISTANCE_OPTIONS)
+    filter_out_debug_flags(HAMMING_DISTANCE_OPTIONS ${HAMMING_DISTANCE_OPTIONS})
+    list(APPEND HAMMING_DISTANCE_TARGET_FLAGS ${HAMMING_DISTANCE_OPTIONS})
+endif()
+
+get_target_property(HAMMING_DISTANCE_INCLUDES hamming_distance_lib INCLUDE_DIRECTORIES)
+if(HAMMING_DISTANCE_INCLUDES)
+    foreach(include_dir IN LISTS HAMMING_DISTANCE_INCLUDES)
+        list(APPEND HAMMING_DISTANCE_TARGET_FLAGS -I${include_dir})
+    endforeach()
+endif()
+
+add_custom_command(
+    OUTPUT ${HAMMING_DISTANCE_ASM}
+    COMMAND ${CMAKE_CXX_COMPILER}
+            -S
+            $<$<BOOL:${CMAKE_CXX_STANDARD}>:-std=c++${CMAKE_CXX_STANDARD}>
+            ${HAMMING_DISTANCE_TARGET_FLAGS}
+            ${HAMMING_DISTANCE_COMPILER_FLAGS}
+            -o ${HAMMING_DISTANCE_ASM}
+            ${HAMMING_DISTANCE_SOURCE}
+    DEPENDS ${HAMMING_DISTANCE_SOURCE}
+    VERBATIM
+    COMMAND_EXPAND_LISTS
+)
+
+add_custom_target(hamming_distance_asm ALL DEPENDS ${HAMMING_DISTANCE_ASM})
+
 add_executable(benchmark_bit_hamming_distance
     benchmarks/bench_hamming_distance.cpp
 )
