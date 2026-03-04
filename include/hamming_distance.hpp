@@ -1,10 +1,7 @@
 #pragma once
 
-#include <bit>
 #include <cstdint>
+#include <span>
 
 
-inline std::uint64_t hamming_distance(std::uint64_t a, std::uint64_t b)
-{
-    return std::popcount(a ^ b);
-}
+void hamming_distance(std::span<const std::uint64_t> a, std::span<const std::uint64_t> b, std::span<std::uint64_t> results);
