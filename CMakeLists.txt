@@ -22,12 +22,12 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(benchmark)
 
-add_library(hamming_distance_lib
-    src/hamming_distance.cpp
+add_library(hamming_distance_lib INTERFACE
+    include/hamming_distance.hpp
 )
 
 target_include_directories(hamming_distance_lib
-    PUBLIC
+    INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
