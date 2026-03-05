@@ -33,12 +33,16 @@ if(NOT simde_POPULATED)
     FetchContent_Populate(simde)
 endif()
 
-add_library(hamming_distance_lib
+set(HAMMING_DISTANCE_LIB_SOURCES
     src/hamming_distance.cpp
+    src/hamming_distance_scalar.cpp
+    src/hamming_distance_auto.cpp
+    src/hamming_distance_avx2.cpp
+    src/hamming_distance_avx512.cpp
 )
 
-add_library(hamming_distance_lib_native
-    src/hamming_distance.cpp
+add_library(hamming_distance_lib
+    ${HAMMING_DISTANCE_LIB_SOURCES}
 )
 
 target_include_directories(hamming_distance_lib
@@ -47,16 +51,12 @@ target_include_directories(hamming_distance_lib
         ${simde_SOURCE_DIR}
 )
 
-target_include_directories(hamming_distance_lib_native
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${simde_SOURCE_DIR}
-)
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(hamming_distance_lib_native PRIVATE -march=native)
-elseif(MSVC)
-    target_compile_options(hamming_distance_lib_native PRIVATE /arch:AVX2)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|X86_64|amd64|AMD64|i[3-6]86)$")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        set_source_files_properties(src/hamming_distance_scalar.cpp PROPERTIES COMPILE_OPTIONS "-march=x86-64-v2")
+        set_source_files_properties(src/hamming_distance_avx2.cpp PROPERTIES COMPILE_OPTIONS "-march=x86-64-v3")
+        set_source_files_properties(src/hamming_distance_avx512.cpp PROPERTIES COMPILE_OPTIONS "-march=x86-64-v4")
+    endif()
 endif()
 
 function(filter_out_debug_flags out_var)
@@ -148,19 +148,9 @@ add_executable(benchmark_bit_hamming_distance
     benchmarks/bench_hamming_distance.cpp
 )
 
-add_executable(benchmark_bit_hamming_distance_native
-    benchmarks/bench_hamming_distance.cpp
-)
-
 target_link_libraries(benchmark_bit_hamming_distance
     PRIVATE
         hamming_distance_lib
-        benchmark::benchmark
-)
-
-target_link_libraries(benchmark_bit_hamming_distance_native
-    PRIVATE
-        hamming_distance_lib_native
         benchmark::benchmark
 )
 
@@ -168,14 +158,6 @@ add_executable(simple_bench_bit_hamming_distance
     benchmarks/simple_bench_hamming_distance.cpp
 )
 
-add_executable(simple_bench_bit_hamming_distance_native
-    benchmarks/simple_bench_hamming_distance.cpp
-)
-
 target_link_libraries(simple_bench_bit_hamming_distance
     PRIVATE hamming_distance_lib
-)
-
-target_link_libraries(simple_bench_bit_hamming_distance_native
-    PRIVATE hamming_distance_lib_native
 )

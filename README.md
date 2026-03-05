@@ -1,12 +1,11 @@
 # bit_hamming_distance
 
-A high-performance C++23 implementation of 64-bit Hamming distance over arrays, with runtime SIMD dispatch and benchmark targets.
+A high-performance C++23 implementation of 64-bit Hamming distance over arrays, with selectable SIMD implementations and benchmark targets.
 
 ## Features
 
 - Computes per-element Hamming distance for two `uint64_t` spans.
-- Runtime dispatch across `AVX-512`, `AVX2`, `AVX`, `SSE4.2`, `SSSE3`, `SSE2`, with scalar fallback.
-- Optional auto-vectorized path via environment variable.
+- Explicit implementation selection via environment variable.
 - Includes:
   - Google Benchmark target (`benchmark_bit_hamming_distance`)
   - Lightweight timing benchmark (`simple_bench_bit_hamming_distance`)
@@ -39,13 +38,6 @@ Simple timing benchmark:
 
 ```bash
 ./build/simple_bench_bit_hamming_distance
-```
-
-Native-optimized variants (`-march=native` on GCC/Clang) are also produced:
-
-```bash
-./build/benchmark_bit_hamming_distance_native
-./build/simple_bench_bit_hamming_distance_native
 ```
 
 ## API
@@ -84,17 +76,17 @@ int main() {
 }
 ```
 
-## Runtime Selection
+## Implementation Selection
 
-By default, the implementation is selected once at runtime based on CPU features.
+By default, the auto-vectorized implementation is used.
 
-To force the auto-vectorized loop version instead:
+To explicitly select an implementation:
 
 ```bash
-HAMMING_DISTANCE_PREFER_AUTO_VECTORIZATION=1 ./build/simple_bench_bit_hamming_distance
+HAMMING_DISTANCE_IMPLEMENTATION=avx2 ./build/simple_bench_bit_hamming_distance
 ```
 
-Truthy values accepted: `1`, `true`, `on`, `yes` (case-insensitive).
+Supported values (case-insensitive, separators ignored): `scalar`, `auto`, `avx2`, `avx512`.
 
 ## License
 
